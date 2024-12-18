@@ -1,0 +1,58 @@
+# Byte-compiled / optimized / DLL files
+pycache/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Pytest cache
+.pytest_cache/
+
+# Unit test / coverage reports
+.coverage
+*.cover
+.hypothesis/
+.tox/
+.nox/
+.cache/
+.coverage.*
+*.log
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# VSCode files
+.vscode/settings.json
+
+# Environment variables
+
+.env.*
+.venv/
+
+# Docker
+*.log
+Dockerfile
+
+# SQLAlchemy generated files
+*.db
+*.sqlite3
+.dataset/
