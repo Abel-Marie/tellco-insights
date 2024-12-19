@@ -55,4 +55,4 @@ Dockerfile
 # SQLAlchemy generated files
 *.db
 *.sqlite3
-.dataset/
+dataset/
