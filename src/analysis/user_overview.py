@@ -1,6 +1,8 @@
 import pandas as pd
-from src.data.data_preprocessing import handle_missing_values, detect_and_handle_outliers, add_total_data_volume
-from src.analysis.data_visualization import plot_histogram, plot_scatter, plot_correlation_heatmap
+import numpy as np
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def aggregate_user_behavior(df):
     """
@@ -34,49 +36,86 @@ def top_handset_manufacturers(df, n=3):
     :param n: int, number of top manufacturers to return
     :return: DataFrame
     """
-    top_manufacturers = df["Last Location Name"].value_counts().head(n)
+    top_manufacturers = df["Handset Manufacturer"].value_counts().head(n)
     return top_manufacturers
 
-from src.analysis.data_visualization import plot_bar_chart, plot_line_chart, plot_boxplot
-
-def calculate_average_session_duration(df):
+def top_handsets_per_manufacturer(df, manufacturers, n=5):
     """
-    Calculate the average session duration per user.
+    Identify the top N handsets per manufacturer.
     :param df: pandas DataFrame
-    :return: pandas DataFrame
+    :param manufacturers: list, top manufacturers
+    :param n: int, number of top handsets to return per manufacturer
+    :return: dict of DataFrames
     """
-    avg_duration = df.groupby("IMSI").agg(
-        average_session_duration=("Dur. (ms)", "mean")
-    ).reset_index()
-    print("\nAverage Session Duration Per User:")
-    print(avg_duration.head())
-    return avg_duration
+    results = {}
+    for manufacturer in manufacturers:
+        top_handsets = (
+            df[df["Handset Manufacturer"] == manufacturer]["IMEI"]
+            .value_counts()
+            .head(n)
+        )
+        results[manufacturer] = top_handsets
+    return results
 
-def calculate_data_usage_trends(df):
+def segment_users(df):
     """
-    Calculate daily data usage trends.
+    Segment users into deciles based on total session duration.
     :param df: pandas DataFrame
-    :return: pandas DataFrame
+    :return: DataFrame with decile segmentation
     """
-    df["Start Date"] = pd.to_datetime(df["Start"]).dt.date
-    data_trends = df.groupby("Start Date").agg(
-        total_download=("Total DL (Bytes)", "sum"),
-        total_upload=("Total UL (Bytes)", "sum"),
-        total_data_volume=("Total Data Volume", "sum")
+    df["Decile"] = pd.qcut(df["total_duration"], 10, labels=False)
+    decile_summary = df.groupby("Decile").agg(
+        total_data=("total_data_volume", "sum"),
+        mean_duration=("total_duration", "mean")
     ).reset_index()
-    print("\nData Usage Trends:")
-    print(data_trends.head())
-    return data_trends
+    return df, decile_summary
 
+def correlation_analysis(df):
+    """
+    Compute a correlation matrix for application-specific data.
+    :param df: pandas DataFrame
+    :return: correlation matrix
+    """
+    app_columns = [
+        "Social Media DL (Bytes)", "Google DL (Bytes)", "Email DL (Bytes)",
+        "Youtube DL (Bytes)", "Netflix DL (Bytes)", "Gaming DL (Bytes)", "Other DL (Bytes)"
+    ]
+    correlation_matrix = df[app_columns].corr()
+    sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm")
+    plt.title("Application Data Correlation Matrix")
+    plt.show()
+    return correlation_matrix
+
+def dimensionality_reduction(df):
+    """
+    Perform Principal Component Analysis (PCA) on application-specific data.
+    :param df: pandas DataFrame
+    :return: PCA results
+    """
+    app_columns = [
+        "Social Media DL (Bytes)", "Google DL (Bytes)", "Email DL (Bytes)",
+        "Youtube DL (Bytes)", "Netflix DL (Bytes)", "Gaming DL (Bytes)", "Other DL (Bytes)"
+    ]
+    pca = PCA(n_components=2)
+    principal_components = pca.fit_transform(df[app_columns].fillna(0))
+    explained_variance = pca.explained_variance_ratio_
+
+    plt.figure(figsize=(8, 6))
+    plt.scatter(principal_components[:, 0], principal_components[:, 1], alpha=0.7)
+    plt.xlabel("Principal Component 1")
+    plt.ylabel("Principal Component 2")
+    plt.title("PCA - Application Data")
+    plt.show()
+
+    return explained_variance
 
 def perform_user_overview_analysis(df):
     """
     Perform a full user overview analysis with enhanced visualizations and insights.
     :param df: pandas DataFrame
     """
-    # Handle missing values
-    df = handle_missing_values(df)
-    
+    from src.data.data_preprocessing import add_total_data_volume
+
     # Add total data volume column
     df = add_total_data_volume(df)
 
@@ -86,26 +125,33 @@ def perform_user_overview_analysis(df):
     # Top handsets and manufacturers
     top_handsets_df = top_handsets(df)
     top_manufacturers_df = top_handset_manufacturers(df)
+    top_manufacturer_list = top_manufacturers_df.index.tolist()
 
-    # Additional Insights
-    avg_session_duration = calculate_average_session_duration(df)
-    data_usage_trends = calculate_data_usage_trends(df)
+    # Top handsets per top manufacturers
+    top_handsets_per_mfg = top_handsets_per_manufacturer(df, top_manufacturer_list)
+
+    # Segment users into deciles
+    user_behavior, decile_summary = segment_users(user_behavior)
+
+    # Correlation Analysis
+    correlation_matrix = correlation_analysis(df)
+
+    # Dimensionality Reduction (PCA)
+    explained_variance = dimensionality_reduction(df)
 
     # Visualizations
-    # Histogram for total data volume
-    plot_histogram(user_behavior, "total_data_volume", title="Total Data Volume Distribution")
+    print("Top 10 Handsets:", top_handsets_df)
+    print("Top 3 Manufacturers:", top_manufacturers_df)
+    print("Top Handsets per Manufacturer:", top_handsets_per_mfg)
+    print("Decile Summary:", decile_summary)
+    print("Explained Variance from PCA:", explained_variance)
 
-    # Bar chart for top handsets
-    plot_bar_chart(
-        data=top_handsets_df.reset_index().rename(columns={"index": "Handset", "IMEI": "Count"}),
-        x_col="Handset", y_col="Count",
-        title="Top 10 Handsets"
-    )
-
-    # Line chart for data usage trends
-    plot_line_chart(data=data_usage_trends, x_col="Start Date", y_col="total_data_volume", title="Daily Data Usage Trends")
-
-    # Boxplot for average session duration
-    plot_boxplot(data=avg_session_duration, x_col="IMSI", y_col="average_session_duration", title="Average Session Duration Per User")
-
-    return user_behavior, top_handsets_df, top_manufacturers_df
+    return {
+        "user_behavior": user_behavior,
+        "top_handsets": top_handsets_df,
+        "top_manufacturers": top_manufacturers_df,
+        "top_handsets_per_mfg": top_handsets_per_mfg,
+        "decile_summary": decile_summary,
+        "correlation_matrix": correlation_matrix,
+        "explained_variance": explained_variance,
+    }
