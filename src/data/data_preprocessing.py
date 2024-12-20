@@ -8,19 +8,22 @@ def handle_missing_values(df, method="mean"):
     :param method: str, method to handle missing values ('mean', 'median', 'mode', 'drop')
     :return: pandas DataFrame
     """
-    if method == "mean":
-        df = df.fillna(df.mean())
-    elif method == "median":
-        df = df.fillna(df.median())
-    elif method == "mode":
-        for col in df.select_dtypes(include=["object"]).columns:
-            df[col] = df[col].fillna(df[col].mode()[0])
-        df = df.fillna(df.mean())
-    elif method == "drop":
-        df = df.dropna()
-    else:
-        raise ValueError("Invalid method. Choose from 'mean', 'median', 'mode', or 'drop'.")
+    for column in df.columns:
+        if pd.api.types.is_numeric_dtype(df[column]):
+            # Apply method only to numeric columns
+            if method == "mean":
+                df[column] = df[column].fillna(df[column].mean())
+            elif method == "median":
+                df[column] = df[column].fillna(df[column].median())
+        elif method == "mode":
+            # Fill with mode for both numeric and non-numeric columns
+            df[column] = df[column].fillna(df[column].mode().iloc[0])
+        elif method == "drop":
+            # Drop rows with missing values
+            df = df.dropna()
     return df
+
+
 
 def detect_and_handle_outliers(df, cols, method="zscore", threshold=3):
     """
