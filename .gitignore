@@ -56,3 +56,4 @@ Dockerfile
 *.db
 *.sqlite3
 dataset/
+.env
