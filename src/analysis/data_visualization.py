@@ -1,97 +1,108 @@
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def plot_histogram(df, column, bins=50, title=None):
+# Univariate Analysis
+
+def plot_histogram(df, column, title="Histogram", bins=30):
     """
     Plot a histogram for a specific column.
     :param df: pandas DataFrame
-    :param column: column name
-    :param bins: number of bins
-    :param title: title for the plot
+    :param column: str, column name to plot
+    :param title: str, title of the plot
+    :param bins: int, number of bins
     """
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(8, 6))
     sns.histplot(df[column], bins=bins, kde=True)
-    plt.title(title or f"Histogram of {column}")
+    plt.title(title)
     plt.xlabel(column)
     plt.ylabel("Frequency")
     plt.show()
 
-def plot_scatter(df, x_col, y_col, alpha=0.5, title=None):
+def plot_boxplot(df, column, title="Boxplot"):
     """
-    Plot a scatterplot for two columns.
+    Plot a boxplot for a specific column.
     :param df: pandas DataFrame
-    :param x_col: x-axis column
-    :param y_col: y-axis column
-    :param alpha: transparency of points
-    :param title: title for the plot
+    :param column: str, column name to plot
+    :param title: str, title of the plot
     """
-    plt.figure(figsize=(10, 6))
-    sns.scatterplot(data=df, x=x_col, y=y_col, alpha=alpha)
-    plt.title(title or f"{x_col} vs {y_col}")
+    plt.figure(figsize=(8, 6))
+    sns.boxplot(x=df[column])
+    plt.title(title)
+    plt.xlabel(column)
+    plt.show()
+
+# Bivariate Analysis
+
+def plot_scatter(df, x_col, y_col, title="Scatter Plot"):
+    """
+    Plot a scatter plot between two columns.
+    :param df: pandas DataFrame
+    :param x_col: str, column name for the x-axis
+    :param y_col: str, column name for the y-axis
+    :param title: str, title of the plot
+    """
+    plt.figure(figsize=(8, 6))
+    sns.scatterplot(data=df, x=x_col, y=y_col)
+    plt.title(title)
     plt.xlabel(x_col)
     plt.ylabel(y_col)
     plt.show()
 
-def plot_correlation_heatmap(df, columns=None, title="Correlation Heatmap"):
+def plot_correlation_heatmap(df, columns, title="Correlation Heatmap"):
     """
-    Plot a heatmap for the correlation matrix of selected columns.
+    Plot a heatmap to show correlations between multiple columns.
     :param df: pandas DataFrame
-    :param columns: list of column names to include in the correlation matrix
-    :param title: title for the plot
+    :param columns: list, list of column names to include in the heatmap
+    :param title: str, title of the plot
     """
-    if columns:
-        df = df[columns]
-    correlation_matrix = df.corr()
     plt.figure(figsize=(10, 8))
-    sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm")
+    correlation_matrix = df[columns].corr()
+    sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f")
     plt.title(title)
     plt.show()
 
-def plot_bar_chart(data, x_col, y_col, title=None, xlabel=None, ylabel=None):
+# Multivariate Analysis
+
+def plot_pairplot(df, columns, title="Pairplot"):
     """
-    Plot a bar chart for a specific column.
-    :param data: pandas DataFrame
-    :param x_col: x-axis column
-    :param y_col: y-axis column
-    :param title: title for the plot
-    :param xlabel: label for x-axis
-    :param ylabel: label for y-axis
+    Plot a pairplot for multiple columns to analyze relationships.
+    :param df: pandas DataFrame
+    :param columns: list, list of column names to include in the pairplot
+    :param title: str, title of the plot
     """
-    plt.figure(figsize=(10, 6))
-    sns.barplot(x=x_col, y=y_col, data=data)
-    plt.title(title or f"{y_col} by {x_col}")
-    plt.xlabel(xlabel or x_col)
-    plt.ylabel(ylabel or y_col)
-    plt.xticks(rotation=45)
+    sns.pairplot(df[columns])
+    plt.suptitle(title, y=1.02)
     plt.show()
 
-def plot_line_chart(data, x_col, y_col, title=None, xlabel=None, ylabel=None):
-    """
-    Plot a line chart for a specific column.
-    :param data: pandas DataFrame
-    :param x_col: x-axis column
-    :param y_col: y-axis column
-    :param title: title for the plot
-    :param xlabel: label for x-axis
-    :param ylabel: label for y-axis
-    """
-    plt.figure(figsize=(10, 6))
-    sns.lineplot(data=data, x=x_col, y=y_col)
-    plt.title(title or f"{y_col} over {x_col}")
-    plt.xlabel(xlabel or x_col)
-    plt.ylabel(ylabel or y_col)
-    plt.show()
+# Example Usage of Updated Functions
 
-def plot_boxplot(data, x_col, y_col, title=None):
+def perform_visualizations(df):
     """
-    Plot a boxplot for a specific column.
-    :param data: pandas DataFrame
-    :param x_col: x-axis column
-    :param y_col: y-axis column
-    :param title: title for the plot
+    Perform univariate, bivariate, and multivariate visualizations.
+    :param df: pandas DataFrame
     """
-    plt.figure(figsize=(10, 6))
-    sns.boxplot(data=data, x=x_col, y=y_col)
-    plt.title(title or f"{y_col} by {x_col}")
-    plt.xticks(rotation=45)
-    plt.show()
+    # Univariate Analysis
+    plot_histogram(df, column="Total Data Volume", title="Total Data Volume Distribution")
+    plot_boxplot(df, column="Dur. (ms)", title="Session Duration Distribution")
+
+    # Bivariate Analysis
+    plot_scatter(df, x_col="Total DL (Bytes)", y_col="Total UL (Bytes)", title="Download vs Upload")
+    plot_correlation_heatmap(
+        df,
+        columns=[
+            "Social Media DL (Bytes)", "Google DL (Bytes)", "Email DL (Bytes)",
+            "Youtube DL (Bytes)", "Netflix DL (Bytes)", "Gaming DL (Bytes)", "Other DL (Bytes)"
+        ],
+        title="Application Data Correlation"
+    )
+
+    # Multivariate Analysis
+    plot_pairplot(
+        df,
+        columns=[
+            "Social Media DL (Bytes)", "Google DL (Bytes)", "Email DL (Bytes)",
+            "Youtube DL (Bytes)", "Netflix DL (Bytes)", "Gaming DL (Bytes)", "Other DL (Bytes)"
+        ],
+        title="Multivariate Relationships"
+    )
