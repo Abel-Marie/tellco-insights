@@ -46,3 +46,52 @@ def plot_correlation_heatmap(df, columns=None, title="Correlation Heatmap"):
     sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm")
     plt.title(title)
     plt.show()
+
+def plot_bar_chart(data, x_col, y_col, title=None, xlabel=None, ylabel=None):
+    """
+    Plot a bar chart for a specific column.
+    :param data: pandas DataFrame
+    :param x_col: x-axis column
+    :param y_col: y-axis column
+    :param title: title for the plot
+    :param xlabel: label for x-axis
+    :param ylabel: label for y-axis
+    """
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x=x_col, y=y_col, data=data)
+    plt.title(title or f"{y_col} by {x_col}")
+    plt.xlabel(xlabel or x_col)
+    plt.ylabel(ylabel or y_col)
+    plt.xticks(rotation=45)
+    plt.show()
+
+def plot_line_chart(data, x_col, y_col, title=None, xlabel=None, ylabel=None):
+    """
+    Plot a line chart for a specific column.
+    :param data: pandas DataFrame
+    :param x_col: x-axis column
+    :param y_col: y-axis column
+    :param title: title for the plot
+    :param xlabel: label for x-axis
+    :param ylabel: label for y-axis
+    """
+    plt.figure(figsize=(10, 6))
+    sns.lineplot(data=data, x=x_col, y=y_col)
+    plt.title(title or f"{y_col} over {x_col}")
+    plt.xlabel(xlabel or x_col)
+    plt.ylabel(ylabel or y_col)
+    plt.show()
+
+def plot_boxplot(data, x_col, y_col, title=None):
+    """
+    Plot a boxplot for a specific column.
+    :param data: pandas DataFrame
+    :param x_col: x-axis column
+    :param y_col: y-axis column
+    :param title: title for the plot
+    """
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(data=data, x=x_col, y=y_col)
+    plt.title(title or f"{y_col} by {x_col}")
+    plt.xticks(rotation=45)
+    plt.show()
