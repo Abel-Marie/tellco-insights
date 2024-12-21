@@ -106,3 +106,15 @@ def perform_visualizations(df):
         ],
         title="Multivariate Relationships"
     )
+
+
+# Distributions per Handset Type
+def distribution_by_handset(df, metric, title):
+    """
+    Plot and interpret the distribution of a metric per handset type.
+    """
+    plt.figure(figsize=(12, 6))
+    sns.boxplot(data=df, x="handset_type", y=metric)
+    plt.xticks(rotation=45)
+    plt.title(title)
+    plt.show()
