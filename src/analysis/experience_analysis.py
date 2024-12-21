@@ -20,3 +20,13 @@ def aggregate_experience_metrics(df):
         avg_throughput = ("Avg Bearer TP DL (kbps)", "mean", )
     ).reset_ndex()
     return aggrerated
+
+# Top, Bottom, and Most Frequent Metrics
+def compute_top_bottom_frequent(df, column, n=10):
+    """
+    Compute and return the top, bottom, and most frequent values of a column
+    """
+    top_values = df[column].nlargest(n)
+    bottom_values = df[column].nsmallest(n)
+    frequent_values = df[column].value_counts().head(n)
+    return top_values, bottom_values, frequent_values
