@@ -30,3 +30,17 @@ def compute_top_bottom_frequent(df, column, n=10):
     bottom_values = df[column].nsmallest(n)
     frequent_values = df[column].value_counts().head(n)
     return top_values, bottom_values, frequent_values
+
+# K-Means Clustering
+
+def Kmeans_clustering(df, features, k=3):
+    """
+    Perform K-Means clustering on selected features
+    """
+    scaler =MinMaxScaler()
+    scaled_features = scaler.fit_transform(df[features])
+    Kmeans = KMeans(n_clusters=k, random_state=42)
+    df["Cluster"] = Kmeans.fit_predict(scaled_features)
+    
+    return df, Kmeans
+    
