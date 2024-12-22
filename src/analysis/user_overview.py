@@ -1,8 +1,6 @@
 import pandas as pd
-import numpy as np
 from sklearn.decomposition import PCA
-import matplotlib.pyplot as plt
-import seaborn as sns
+
 
 def aggregate_user_behavior(df):
     """
@@ -10,14 +8,15 @@ def aggregate_user_behavior(df):
     :param df: pandas DataFrame
     :return: aggregated DataFrame
     """
-    user_behavior = df.groupby("IMSI").agg(
-        number_of_sessions=("Bearer Id", "count"),
-        total_duration=("Dur. (ms)", "sum"),
-        total_download=("Total DL (Bytes)", "sum"),
-        total_upload=("Total UL (Bytes)", "sum"),
-        total_data_volume=("Total Data Volume", "sum")
+    user_behavior = df.groupby("imsi").agg(
+        number_of_sessions=("bearer_id", "count"),
+        total_duration=("dur._(ms)", "sum"),
+        total_download=("total_dl_(bytes)", "sum"),
+        total_upload=("total_ul_(bytes)", "sum"),
+        total_data_volume=("total_data_volume", "sum"),
     ).reset_index()
     return user_behavior
+
 
 def top_handsets(df, n=10):
     """
@@ -26,8 +25,8 @@ def top_handsets(df, n=10):
     :param n: int, number of top handsets to return
     :return: DataFrame
     """
-    top_handsets = df["IMEI"].value_counts().head(n)
-    return top_handsets
+    return df["handset_type"].value_counts().head(n)
+
 
 def top_handset_manufacturers(df, n=3):
     """
@@ -36,8 +35,8 @@ def top_handset_manufacturers(df, n=3):
     :param n: int, number of top manufacturers to return
     :return: DataFrame
     """
-    top_manufacturers = df["Handset Manufacturer"].value_counts().head(n)
-    return top_manufacturers
+    return df["handset_manufacturer"].value_counts().head(n)
+
 
 def top_handsets_per_manufacturer(df, manufacturers, n=5):
     """
@@ -50,12 +49,13 @@ def top_handsets_per_manufacturer(df, manufacturers, n=5):
     results = {}
     for manufacturer in manufacturers:
         top_handsets = (
-            df[df["Handset Manufacturer"] == manufacturer]["IMEI"]
+            df[df["handset_manufacturer"] == manufacturer]["handset_type"]
             .value_counts()
             .head(n)
         )
         results[manufacturer] = top_handsets
     return results
+
 
 def segment_users(df):
     """
@@ -63,12 +63,13 @@ def segment_users(df):
     :param df: pandas DataFrame
     :return: DataFrame with decile segmentation
     """
-    df["Decile"] = pd.qcut(df["total_duration"], 10, labels=False)
-    decile_summary = df.groupby("Decile").agg(
+    df["decile"] = pd.qcut(df["total_duration"], 10, labels=False)
+    decile_summary = df.groupby("decile").agg(
         total_data=("total_data_volume", "sum"),
-        mean_duration=("total_duration", "mean")
+        mean_duration=("total_duration", "mean"),
     ).reset_index()
     return df, decile_summary
+
 
 def correlation_analysis(df):
     """
@@ -77,48 +78,33 @@ def correlation_analysis(df):
     :return: correlation matrix
     """
     app_columns = [
-        "Social Media DL (Bytes)", "Google DL (Bytes)", "Email DL (Bytes)",
-        "Youtube DL (Bytes)", "Netflix DL (Bytes)", "Gaming DL (Bytes)", "Other DL (Bytes)"
+        "social_media_dl_(bytes)", "google_dl_(bytes)", "email_dl_(bytes)",
+        "youtube_dl_(bytes)", "netflix_dl_(bytes)", "gaming_dl_(bytes)", "other_dl_(bytes)"
     ]
-    correlation_matrix = df[app_columns].corr()
-    sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm")
-    plt.title("Application Data Correlation Matrix")
-    plt.show()
-    return correlation_matrix
+    return df[app_columns].corr()
+
 
 def dimensionality_reduction(df):
     """
-    Perform Principal Component Analysis (PCA) on application-specific data.
+    Perform PCA on application-specific data.
     :param df: pandas DataFrame
     :return: PCA results
     """
     app_columns = [
-        "Social Media DL (Bytes)", "Google DL (Bytes)", "Email DL (Bytes)",
-        "Youtube DL (Bytes)", "Netflix DL (Bytes)", "Gaming DL (Bytes)", "Other DL (Bytes)"
+        "social_media_dl_(bytes)", "google_dl_(bytes)", "email_dl_(bytes)",
+        "youtube_dl_(bytes)", "netflix_dl_(bytes)", "gaming_dl_(bytes)", "other_dl_(bytes)"
     ]
     pca = PCA(n_components=2)
-    principal_components = pca.fit_transform(df[app_columns].fillna(0))
+    principal_components = pca.fit_transform(df[app_columns])
     explained_variance = pca.explained_variance_ratio_
+    return principal_components, explained_variance
 
-    plt.figure(figsize=(8, 6))
-    plt.scatter(principal_components[:, 0], principal_components[:, 1], alpha=0.7)
-    plt.xlabel("Principal Component 1")
-    plt.ylabel("Principal Component 2")
-    plt.title("PCA - Application Data")
-    plt.show()
-
-    return explained_variance
 
 def perform_user_overview_analysis(df):
     """
-    Perform a full user overview analysis with enhanced visualizations and insights.
+    Perform a full user overview analysis.
     :param df: pandas DataFrame
     """
-    from src.data.data_preprocessing import add_total_data_volume
-
-    # Add total data volume column
-    df = add_total_data_volume(df)
-
     # Aggregate user behavior
     user_behavior = aggregate_user_behavior(df)
 
@@ -137,15 +123,9 @@ def perform_user_overview_analysis(df):
     correlation_matrix = correlation_analysis(df)
 
     # Dimensionality Reduction (PCA)
-    explained_variance = dimensionality_reduction(df)
+    principal_components, explained_variance = dimensionality_reduction(df)
 
-    # Visualizations
-    print("Top 10 Handsets:", top_handsets_df)
-    print("Top 3 Manufacturers:", top_manufacturers_df)
-    print("Top Handsets per Manufacturer:", top_handsets_per_mfg)
-    print("Decile Summary:", decile_summary)
-    print("Explained Variance from PCA:", explained_variance)
-
+    # Return analysis results
     return {
         "user_behavior": user_behavior,
         "top_handsets": top_handsets_df,
@@ -153,5 +133,6 @@ def perform_user_overview_analysis(df):
         "top_handsets_per_mfg": top_handsets_per_mfg,
         "decile_summary": decile_summary,
         "correlation_matrix": correlation_matrix,
+        "principal_components": principal_components,
         "explained_variance": explained_variance,
     }
