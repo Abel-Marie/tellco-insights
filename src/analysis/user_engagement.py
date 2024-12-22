@@ -5,23 +5,21 @@ import seaborn as sns
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import MinMaxScaler
 
-# Task 2.1: Aggregate Metrics
-
+#  Aggregate Metrics
 def aggregate_user_engagement(df):
     """
-    Aggregate engagement metrics per customer (MSISDN/Number).
+    Aggregate engagement metrics per customer (msisdn/number).
     :param df: pandas DataFrame
     :return: aggregated DataFrame
     """
-    aggregated_metrics = df.groupby("MSISDN/Number").agg(
-        sessions_frequency=("Bearer Id", "count"),
-        total_duration=("Dur. (ms)", "sum"),
-        total_traffic=("Total Data Volume", "sum")
+    aggregated_metrics = df.groupby("msisdn/number").agg(
+        sessions_frequency=("bearer_id", "count"),
+        total_duration=("dur._(ms)", "sum"),
+        total_traffic=("total_data_volume", "sum")
     ).reset_index()
     return aggregated_metrics
 
 # Top 10 Customers by Engagement Metric
-
 def top_customers_by_metric(aggregated_df, metric, n=10):
     """
     Retrieve top N customers by a specific engagement metric.
@@ -32,8 +30,7 @@ def top_customers_by_metric(aggregated_df, metric, n=10):
     """
     return aggregated_df.nlargest(n, metric)
 
-# Normalize Metrics and Run K-Means Clustering
-
+#  Normalize Metrics and Run K-Means Clustering
 def normalize_and_cluster(aggregated_df, metrics, k=3):
     """
     Normalize metrics and run k-means clustering.
@@ -50,8 +47,7 @@ def normalize_and_cluster(aggregated_df, metrics, k=3):
 
     return aggregated_df, kmeans, scaler
 
-# Metrics Summary per Cluster
-
+#  Metrics Summary per Cluster
 def cluster_metrics_summary(aggregated_df, metrics):
     """
     Compute minimum, maximum, average, and total metrics for each cluster.
@@ -67,8 +63,7 @@ def cluster_metrics_summary(aggregated_df, metrics):
     ])
     return summary
 
-# Aggregate Traffic per Application and Identify Top Users
-
+#  Aggregate Traffic per Application and Identify Top Users
 def top_users_per_application(df, app_columns, n=10):
     """
     Aggregate total traffic per application and derive the top N users per application.
@@ -79,12 +74,11 @@ def top_users_per_application(df, app_columns, n=10):
     """
     top_users = {}
     for app in app_columns:
-        aggregated_app = df.groupby("MSISDN/Number").agg({app: "sum"}).reset_index()
+        aggregated_app = df.groupby("msisdn/number").agg({app: "sum"}).reset_index()
         top_users[app] = aggregated_app.nlargest(n, app)
     return top_users
 
-# Plot Top 3 Most Used Applications
-
+#  Plot Top 3 Most Used Applications
 def plot_top_applications(df, app_columns):
     """
     Plot the top 3 most used applications.
@@ -102,8 +96,7 @@ def plot_top_applications(df, app_columns):
     plt.ylabel("Total Traffic (Bytes)")
     plt.show()
 
-# Elbow Method for Optimized k
-
+#  Elbow Method for Optimized k
 def elbow_method(aggregated_df, metrics, max_k=10):
     """
     Determine the optimized value of k using the elbow method.
@@ -127,3 +120,9 @@ def elbow_method(aggregated_df, metrics, max_k=10):
     plt.xlabel("Number of Clusters")
     plt.ylabel("Distortion")
     plt.show()
+
+# Columns for Application Engagement Analysis
+app_columns = [
+    "social_media_dl_(bytes)", "google_dl_(bytes)", "email_dl_(bytes)",
+    "youtube_dl_(bytes)", "netflix_dl_(bytes)", "gaming_dl_(bytes)", "other_dl_(bytes)"
+]
