@@ -15,14 +15,12 @@ DB_NAME = os.getenv("DB_NAME")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
-# Define the path to the dataset folder
-DATASET_FOLDER = os.path.join(os.getcwd(), "dataset")
+DATASET_FOLDER = os.path.abspath(os.path.join(os.getcwd(), "../dataset"))
 
-
-def load_csv(file_name):
+def load_cleaned_dataset(file_name="cleaned_dataset.csv"):
     """
-    Load a CSV file from the dataset folder.
-    :param file_name: Name of the CSV file (str)
+    Load the cleaned dataset CSV file from the dataset folder.
+    :param file_name: Name of the CSV file (default: 'cleaned_dataset.csv')
     :return: pandas DataFrame
     """
     file_path = os.path.join(DATASET_FOLDER, file_name)
