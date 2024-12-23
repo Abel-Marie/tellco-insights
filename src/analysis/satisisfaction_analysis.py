@@ -140,3 +140,19 @@ def plot_clusters(satisfaction_df):
     plt.ylabel("Experience Score")
     plt.legend(title="Cluster", loc="best")
     plt.show()
+
+
+def aggregate_scores_by_cluster(satisfaction_df):
+    """
+    Compute average satisfaction score and average experience score for each cluster.
+    :param satisfaction_df: pandas DataFrame containing cluster labels
+    :return: DataFrame with aggregated scores by cluster
+    """
+    cluster_aggregates = satisfaction_df.groupby("satisfaction_cluster").agg(
+        avg_satisfaction_score=("satisfaction_score", "mean"),
+        avg_experience_score=("experience_score", "mean"),
+        avg_engagement_score=("engagement_score", "mean"),
+        cluster_size=("satisfaction_cluster", "size")
+    ).reset_index()
+
+    return cluster_aggregates
