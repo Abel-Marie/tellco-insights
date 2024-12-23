@@ -3,6 +3,10 @@ from scipy.spatial.distance import euclidean
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 def assign_engagement_score(df, engagement_clusters, least_engaged_cluster):
     """
@@ -98,3 +102,41 @@ def train_regression_model(satisfaction_df, features, target="satisfaction_score
     print(f"Model Evaluation:\nMean Squared Error: {mse:.2f}\nR^2 Score: {r2:.2f}")
 
     return model, X_test, y_test, predictions
+
+
+def cluster_users_by_satisfaction(satisfaction_df, k=2):
+    """
+    Perform k-means clustering on engagement and experience scores.
+    :param satisfaction_df: pandas DataFrame containing engagement and experience scores
+    :param k: int, number of clusters
+    :return: DataFrame with cluster labels, k-means model
+    """
+    # Select features for clustering
+    clustering_features = satisfaction_df[["engagement_score", "experience_score"]]
+
+    # Fit K-Means model
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    satisfaction_df["satisfaction_cluster"] = kmeans.fit_predict(clustering_features)
+
+    return satisfaction_df, kmeans
+
+def plot_clusters(satisfaction_df):
+    """
+    Visualize clusters using engagement and experience scores.
+    :param satisfaction_df: pandas DataFrame containing cluster labels
+    """
+    plt.figure(figsize=(10, 6))
+    sns.scatterplot(
+        x="engagement_score",
+        y="experience_score",
+        hue="satisfaction_cluster",
+        palette="viridis",
+        data=satisfaction_df,
+        s=100,
+        alpha=0.7
+    )
+    plt.title("K-Means Clustering of Engagement and Experience Scores")
+    plt.xlabel("Engagement Score")
+    plt.ylabel("Experience Score")
+    plt.legend(title="Cluster", loc="best")
+    plt.show()
