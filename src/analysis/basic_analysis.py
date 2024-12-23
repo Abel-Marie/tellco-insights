@@ -21,16 +21,3 @@ def identify_missing_values(df):
     print(missing_values[missing_values > 0])
     return missing_values
 
-def get_top_n(df, column, n=10, ascending=False):
-    """
-    Get the top N rows based on a specific column.
-    :param df: pandas DataFrame
-    :param column: column name to sort by
-    :param n: number of rows to return
-    :param ascending: sort order
-    :return: pandas DataFrame with top N rows
-    """
-    top_n = df.nlargest(n, column) if not ascending else df.nsmallest(n, column)
-    print(f"\nTop {n} rows by {column}:")
-    print(top_n)
-    return top_n
