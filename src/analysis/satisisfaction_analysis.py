@@ -35,3 +35,31 @@ def assign_experience_score(df, experience_clusters, worst_experience_cluster):
         lambda row: euclidean(row, worst_experience_centroid), axis=1
     )
     return df
+
+def calculate_satisfaction_score(engagement_df, experience_df):
+    """
+    Calculate the satisfaction score as the average of engagement and experience scores.
+    :param engagement_df: pandas DataFrame, contains engagement scores
+    :param experience_df: pandas DataFrame, contains experience scores
+    :return: DataFrame with satisfaction scores
+    """
+    # Merge engagement and experience data on the user identifier
+    merged_df = engagement_df.merge(
+        experience_df[["msisdn/number", "experience_score"]],
+        on="msisdn/number",
+        how="inner"
+    )
+
+    # Calculate the satisfaction score
+    merged_df["satisfaction_score"] = (merged_df["engagement_score"] + merged_df["experience_score"]) / 2
+
+    return merged_df
+
+def top_satisfied_customers(satisfaction_df, n=10):
+    """
+    Retrieve the top N most satisfied customers based on satisfaction score.
+    :param satisfaction_df: pandas DataFrame, contains satisfaction scores
+    :param n: int, number of top customers to return
+    :return: DataFrame of top N satisfied customers
+    """
+    return satisfaction_df.nlargest(n, "satisfaction_score")
