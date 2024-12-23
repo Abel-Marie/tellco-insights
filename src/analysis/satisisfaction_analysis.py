@@ -1,5 +1,8 @@
 import numpy as np
 from scipy.spatial.distance import euclidean
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
 
 def assign_engagement_score(df, engagement_clusters, least_engaged_cluster):
     """
@@ -63,3 +66,35 @@ def top_satisfied_customers(satisfaction_df, n=10):
     :return: DataFrame of top N satisfied customers
     """
     return satisfaction_df.nlargest(n, "satisfaction_score")
+
+
+
+def train_regression_model(satisfaction_df, features, target="satisfaction_score"):
+    """
+    Train a regression model to predict the satisfaction score.
+    :param satisfaction_df: pandas DataFrame, contains features and satisfaction scores
+    :param features: list of str, column names to use as predictors
+    :param target: str, column name of the target variable
+    :return: trained model, test features, test targets, predictions
+    """
+    # Prepare data
+    X = satisfaction_df[features]
+    y = satisfaction_df[target]
+
+    # Split data into training and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Train regression model
+    model = RandomForestRegressor(random_state=42)
+    model.fit(X_train, y_train)
+
+    # Make predictions
+    predictions = model.predict(X_test)
+
+    # Evaluate the model
+    mse = mean_squared_error(y_test, predictions)
+    r2 = r2_score(y_test, predictions)
+
+    print(f"Model Evaluation:\nMean Squared Error: {mse:.2f}\nR^2 Score: {r2:.2f}")
+
+    return model, X_test, y_test, predictions
