@@ -3,134 +3,139 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.cluster import KMeans
-from sklearn.preprocessing import MinMaxScale 
+from sklearn.preprocessing import MinMaxScaler
 
-
-
-# Aggregate Metrics
-
-def aggregate_user_engagement(df):
+def aggregate_experience_metrics(df):
     """
-    Aggregate engagement metrics per customer (MSISDN/Number).
+    Aggregate user experience metrics per customer (msisdn/number).
     :param df: pandas DataFrame
     :return: aggregated DataFrame
     """
-    aggregated_metrics = df.groupby("MSISDN/Number").agg(
-        sessions_frequency=("Bearer Id", "count"),
-        total_duration=("Dur. (ms)", "sum"),
-        total_traffic=("Total Data Volume", "sum")
+    aggregated_df = df.groupby("msisdn/number").agg(
+        avg_tcp_retransmission=("tcp_dl_retrans._vol_(bytes)", "mean"),
+        avg_rtt=("avg_rtt_dl_(ms)", "mean"),
+        avg_throughput=("avg_bearer_tp_dl_(kbps)", "mean"),
+        handset_type=("handset_type", "first")
     ).reset_index()
-    return aggregated_metrics
+    return aggregated_df
 
-# Top 10 customer engagement metrics
-
-def top_customers_by_metric(aggregated_df, metric, n=10):
+def top_bottom_frequent_values(df, column, n=10):
     """
-    Retrieve top N customers by a specific engagement metric.
-    :param aggregated_df: pandas DataFrame
-    :param metric: str, metric column name
-    :param n: int, number of top customers to return
-    :return: pandas DataFrame
+    Compute the top, bottom, and most frequent values for a given column.
+    :param df: pandas DataFrame
+    :param column: str, column name
+    :param n: int, number of values to return
+    :return: dict with top, bottom, and frequent values
     """
-    return aggregated_df.nlargest(n, metric)
+    top_values = df.nlargest(n, column)[[column]]
+    bottom_values = df.nsmallest(n, column)[[column]]
+    frequent_values = df[column].value_counts().head(n)
 
+    return {
+        "top": top_values,
+        "bottom": bottom_values,
+        "frequent": frequent_values
+    }
 
-# Normalize Metrics and Run K-Means clustering
-
-def normalize_and_cluster(aggregated_df, metrics, k=3):
+def plot_top_n_throughput_distribution_by_handset(df, top_n=20):
     """
-    Normalize metrics and run k-means clustering.
-    :param aggregated_df: pandas DataFrame
-    :param metrics: list, list of metric column names to normalize
+    Plot the distribution of average throughput for the top N handset types by throughput.
+    :param df: pandas DataFrame
+    :param top_n: int, number of top handset types to include
+    """
+    # Get top N handset types by average throughput
+    top_handsets = df.groupby("handset_type")["avg_throughput"].mean().nlargest(top_n).index
+    filtered_df = df[df["handset_type"].isin(top_handsets)]
+
+    plt.figure(figsize=(12, 6))
+    sns.boxplot(x="handset_type", y="avg_throughput", data=filtered_df)
+    plt.title(f"Throughput Distribution by Top {top_n} Handset Types")
+    plt.xlabel("Handset Type")
+    plt.ylabel("Average Throughput (kbps)")
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.show()
+
+def plot_top_n_tcp_retransmission_by_handset(df, top_n=20):
+    """
+    Plot the average TCP retransmission for the top N handset types by retransmission.
+    :param df: pandas DataFrame
+    :param top_n: int, number of top handset types to include
+    """
+    # Get top N handset types by average TCP retransmission
+    retransmission_summary = df.groupby("handset_type")["avg_tcp_retransmission"].mean().reset_index()
+    top_handsets = retransmission_summary.nlargest(top_n, "avg_tcp_retransmission")
+    
+    plt.figure(figsize=(12, 6))
+    sns.barplot(x="handset_type", y="avg_tcp_retransmission", data=top_handsets)
+    plt.title(f"Average TCP Retransmission by Top {top_n} Handset Types")
+    plt.xlabel("Handset Type")
+    plt.ylabel("Average TCP Retransmission (Bytes)")
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.show()
+
+def cluster_users_by_experience(df, k=3):
+    """
+    Perform k-means clustering on experience metrics.
+    :param df: pandas DataFrame
     :param k: int, number of clusters
-    :return: DataFrame with cluster labels, k-means model, and scaler
+    :return: DataFrame with cluster labels and KMeans model
     """
+    metrics = ["avg_tcp_retransmission", "avg_rtt", "avg_throughput"]
     scaler = MinMaxScaler()
-    normalized_data = scaler.fit_transform(aggregated_df[metrics])
+    normalized_data = scaler.fit_transform(df[metrics].fillna(0))
 
     kmeans = KMeans(n_clusters=k, random_state=42)
-    aggregated_df["Cluster"] = kmeans.fit_predict(normalized_data)
+    df["experience_cluster"] = kmeans.fit_predict(normalized_data)
 
-    return aggregated_df, kmeans, scaler
+    return df, kmeans
 
-
-# Metrics summary per cluster
-
-def cluster_metrics_summary(aggregated_df, metrics):
+def describe_clusters(df):
     """
-    Compute minimum, maximum, average, and total metrics for each cluster.
-    :param aggregated_df: pandas DataFrame
-    :param metrics: list, list of metric column names
-    :return: pandas DataFrame summarizing metrics per cluster
-    """
-    summary = aggregated_df.groupby("Cluster")[metrics].agg([
-        ("min", "min"),
-        ("max", "max"),
-        ("mean", "mean"),
-        ("sum", "sum")
-    ])
-    return summary
-
-
-# Aggregate Traffic per Application and Identify Top Users
-
-def top_users_per_application(df, app_columns, n=10):
-    """
-    Aggregate total traffic per application and derive the top N users per application.
+    Provide descriptions of experience clusters.
     :param df: pandas DataFrame
-    :param app_columns: list, list of application-specific columns
-    :param n: int, number of top users to return
-    :return: dict of DataFrames for each application
+    :return: summary DataFrame
     """
-    top_users = {}
-    for app in app_columns:
-        aggregated_app = df.groupby("MSISDN/Number").agg({app: "sum"}).reset_index()
-        top_users[app] = aggregated_app.nlargest(n, app)
-    return top_users
+    cluster_summary = df.groupby("experience_cluster").agg(
+        avg_tcp_retransmission=("avg_tcp_retransmission", "mean"),
+        avg_rtt=("avg_rtt", "mean"),
+        avg_throughput=("avg_throughput", "mean"),
+        count=("experience_cluster", "size")
+    ).reset_index()
 
+    return cluster_summary
 
-# Plot Top 3 Most Used Applications
-
-def plot_top_applications(df, app_columns):
+def perform_experience_analysis(df):
     """
-    Plot the top 3 most used applications.
+    Perform a complete experience analysis.
     :param df: pandas DataFrame
-    :param app_columns: list, list of application-specific columns
+    :return: results dictionary
     """
-    total_traffic = {app: df[app].sum() for app in app_columns}
-    sorted_apps = sorted(total_traffic.items(), key=lambda x: x[1], reverse=True)[:3]
+    # Aggregate experience metrics
+    aggregated_metrics = aggregate_experience_metrics(df)
 
-    apps, traffic = zip(*sorted_apps)
-    plt.figure(figsize=(10, 6))
-    sns.barplot(x=list(apps), y=list(traffic))
-    plt.title("Top 3 Most Used Applications")
-    plt.xlabel("Applications")
-    plt.ylabel("Total Traffic (Bytes)")
-    plt.show()
-    
-    
-# Elbow Method for Optimized k
+    # Top, bottom, and frequent values for TCP retransmission, RTT, and throughput
+    tcp_analysis = top_bottom_frequent_values(aggregated_metrics, "avg_tcp_retransmission")
+    rtt_analysis = top_bottom_frequent_values(aggregated_metrics, "avg_rtt")
+    throughput_analysis = top_bottom_frequent_values(aggregated_metrics, "avg_throughput")
 
-def elbow_method(aggregated_df, metrics, max_k=10):
-    """
-    Determine the optimized value of k using the elbow method.
-    :param aggregated_df: pandas DataFrame
-    :param metrics: list, list of metric column names to normalize
-    :param max_k: int, maximum number of clusters to test
-    :return: None (plots the elbow curve)
-    """
-    scaler = MinMaxScaler()
-    normalized_data = scaler.fit_transform(aggregated_df[metrics])
+    # Visualizations
+    plot_top_n_throughput_distribution_by_handset(aggregated_metrics)
+    plot_top_n_tcp_retransmission_by_handset(aggregated_metrics)
 
-    distortions = []
-    for k in range(1, max_k + 1):
-        kmeans = KMeans(n_clusters=k, random_state=42)
-        kmeans.fit(normalized_data)
-        distortions.append(kmeans.inertia_)
+    # Clustering users by experience
+    clustered_data, kmeans_model = cluster_users_by_experience(aggregated_metrics)
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(range(1, max_k + 1), distortions, marker="o")
-    plt.title("Elbow Method for Optimal k")
-    plt.xlabel("Number of Clusters")
-    plt.ylabel("Distortion")
-    plt.show()
+    # Describe clusters
+    cluster_summary = describe_clusters(clustered_data)
+
+    return {
+        "aggregated_metrics": aggregated_metrics,
+        "tcp_analysis": tcp_analysis,
+        "rtt_analysis": rtt_analysis,
+        "throughput_analysis": throughput_analysis,
+        "clustered_data": clustered_data,
+        "cluster_summary": cluster_summary,
+        "kmeans_model": kmeans_model
+    }
