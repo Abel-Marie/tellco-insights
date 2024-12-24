@@ -1,0 +1,8 @@
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from src.analysis.user_overview import perform_user_overview_analysis
+from src.analysis.user_engagement import aggregate_user_engagement, plot_top_applications
+from src.analysis.experience_analysis import aggregate_experience_metrics, plot_top_n_throughput_distribution_by_handset
+from src.analysis.satisisfaction_analysis import assign_engagement_score, assign_experience_score
