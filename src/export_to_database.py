@@ -1,6 +1,9 @@
+import os
+import psycopg2
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from dotenv import load_dotenv
+import pandas as pd
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -30,3 +33,25 @@ def export_to_postgres(df, table_name):
     
     except Exception as e:
         print(f"Error exporting table: {e}")
+        
+
+# Main function to prepare and export the final table
+def prepare_and_export_final_table(df, table_name):
+    """
+    Prepare and export the final table to PostgreSQL.
+    :param df: pandas DataFrame containing user IDs, engagement score, experience score, and satisfaction score
+    :param table_name: str, name of the database table
+    """
+    # Select relevant columns
+    final_table = df[["msisdn/number", "engagement_score", "experience_score", "satisfaction_score"]]
+    
+    # Rename columns for clarity
+    final_table = final_table.rename(columns={
+        "msisdn/number": "user_id",
+        "engagement_score": "engagement_score",
+        "experience_score": "experience_score",
+        "satisfaction_score": "satisfaction_score"
+    })
+    
+    # Export to PostgreSQL
+    export_to_postgres(final_table, table_name)
